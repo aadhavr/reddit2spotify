@@ -1,4 +1,4 @@
-# Reddit to Spotify Playlist Convertor
+# Text to Spotify Playlist Convertor
 
 I like to get my music recommendations from the internet. But, Spotify is very laggy and searching everything up and adding them to a playlist can take hours for long lists. This script that creates a Spotify playlist from a list of songs provided in a `songs.txt` file. The script uses the Spotify Web API to search for the songs and add them to a new playlist.
 
