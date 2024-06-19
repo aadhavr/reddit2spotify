@@ -5,18 +5,18 @@ from spotipy.oauth2 import SpotifyOAuth
 import logging
 import time
 
-# Setup logging
 logging.basicConfig(level=logging.INFO)
 
-# Spotify API credentials from environment variables
+# set your environment variables to each of these
 CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
 CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')
 REDIRECT_URI = os.getenv('SPOTIPY_REDIRECT_URI')
 SCOPE = 'playlist-modify-public'
 
-# File containing list of songs (Title - Artist)
+# this is a file that will contain a list of songs (Title - Artist)
 SONGS_FILE = 'songs.txt'
-# File to store the playlist counter
+
+# this file is a counter to help with naming playlists
 COUNTER_FILE = 'playlist_counter.txt'
 
 def read_counter():
@@ -37,11 +37,11 @@ def create_spotify_playlist(songs):
                                                        redirect_uri=REDIRECT_URI,
                                                        scope=SCOPE))
 
-        # Get current user's username
+        # get login info
         user = sp.current_user()
         username = user['id']
 
-        # Read the current counter, increment it, and write it back
+        # read counter.txt and increment
         counter = read_counter()
         counter += 1
         write_counter(counter)
@@ -51,14 +51,11 @@ def create_spotify_playlist(songs):
         playlist_description = 'Created by a script!'
         playlist = sp.user_playlist_create(username, playlist_name, public=True, description=playlist_description)
 
-        # Process each song in the list
         for song in songs:
-            # Strip whitespace and handle empty lines
             song = song.strip()
             if not song:
-                continue  # Skip empty lines
+                continue
             
-            # Attempt to split the line into title and artist
             if ' - ' in song:
                 parts = song.split(' - ')
             elif ' by ' in song:
@@ -72,11 +69,11 @@ def create_spotify_playlist(songs):
                 continue
             
             title, artist = parts
-            # Remove comments or extra text within parentheses
+            # remove comments or extra text within parentheses
             title = re.sub(r"\(.*?\)", "", title).strip()
             artist = re.sub(r"\(.*?\)", "", artist).strip()
 
-            # Search for the track on Spotify
+            # check spotify
             try:
                 results = sp.search(q=f"track:{title} artist:{artist}", type='track')
                 items = results['tracks']['items']
@@ -87,14 +84,14 @@ def create_spotify_playlist(songs):
                 else:
                     logging.info(f"Couldn't find {title} by {artist} on Spotify.")
             except spotipy.exceptions.SpotifyException as e:
-                if e.http_status == 429:  # Too Many Requests
+                if e.http_status == 429:  # i'm not trying to lose my money in api requests
                     retry_after = int(e.headers.get('Retry-After', 1))
                     logging.warning(f"Rate limit exceeded. Retrying after {retry_after} seconds.")
                     time.sleep(retry_after)
-                    continue  # Retry the current song
+                    continue  # try again
                 else:
                     logging.error(f"Spotify API error: {e}")
-                    break  # Exit loop on other errors
+                    break  
                 
         logging.info(f"Playlist '{playlist_name}' has been created and populated with songs.")
         
@@ -103,11 +100,9 @@ def create_spotify_playlist(songs):
 
 if __name__ == '__main__':
     try:
-        # Read songs from the file
         with open(SONGS_FILE, 'r') as f:
             songs = f.readlines()
 
-        # Call function to create Spotify playlist
         create_spotify_playlist(songs)
         
     except FileNotFoundError:
